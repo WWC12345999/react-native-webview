@@ -499,40 +499,33 @@ public class RNCWebViewModuleImpl implements ActivityEventListener {
     public File getCapturedFile(MimeType mimeType) throws IOException {
         String prefix = "";
         String suffix = "";
-        String dir = "";
 
         switch (mimeType) {
             case IMAGE:
                 prefix = "image-";
                 suffix = ".jpg";
-                dir = Environment.DIRECTORY_PICTURES;
                 break;
             case VIDEO:
                 prefix = "video-";
                 suffix = ".mp4";
-                dir = Environment.DIRECTORY_MOVIES;
                 break;
-
             default:
                 break;
         }
 
-        String filename = prefix + String.valueOf(System.currentTimeMillis()) + suffix;
-        File outputFile = null;
+        String filename = prefix + System.currentTimeMillis() + suffix;
 
-        // for versions below 6.0 (23) we use the old File creation & permissions model
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            // only this Directory works on all tested Android versions
-            // ctx.getExternalFilesDir(dir) was failing on Android 5.0 (sdk 21)
-            File storageDir = Environment.getExternalStoragePublicDirectory(dir);
-            outputFile = new File(storageDir, filename);
-        } else {
-            File storageDir = mContext.getExternalFilesDir(null);
-            outputFile = File.createTempFile(prefix, suffix, storageDir);
+        File storageDir;
+
+        // Use internal storage to avoid external storage vulnerability
+        storageDir = new File(mContext.getFilesDir(), "media");
+        if (!storageDir.exists()) {
+            storageDir.mkdirs();  // Create directory if it doesn't exist
         }
 
-        return outputFile;
+        return new File(storageDir, filename);
     }
+
 
     private Boolean noAcceptTypesSet(String[] types) {
         // when our array returned from getAcceptTypes() has no values set from the webview
